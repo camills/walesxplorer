@@ -34,7 +34,7 @@ export default {
         "Loc": "Cambrian Mountains",
         "VidLink": "\"<iframe src=https://s3.amazonaws.com/skyworks-microclips-final/UK%2B2014%2BMicro%2BClips/Wal_Pow_Camb_1274_Footagemap_1.mp4\"  width='380' height='281' frameborder='0' webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>",
         "Info": "The mountains technically stretch from South Wales to Snowdonia, but in more modern times has come to refer to the mountains in Mid Wales. They are a wild and often desolate place, but also very beautiful and a popular place for walkers and climbers. Two great rivers, the Wye and the Severn, rise in them. The highest point in the range is 752 metres.",
-        "VidUrl": "\"<iframe width="560" height="315" src="https://www.youtube.com/embed/HSh54a6-BII" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>,
+        "VidUrl": "\"<iframe src=https://www.youtube.com/embed/HSh54a6-BII  width='380' height='281' frameborder='0' webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>",
         "still": "https://walesway.s3.amazonaws.com/stills/wal_pow_camb_1274_footagemap_1-00003.png"
       },
       "id": "593e0661-d03b-43a8-976d-4dc84f842d50"
