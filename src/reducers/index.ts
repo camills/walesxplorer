@@ -1,16 +1,8 @@
 import { routerReducer as routing, RouterState } from 'react-router-redux';
 import { combineReducers, Action } from 'redux';
 import { SET_MONUMENTS, SET_PHOTOS } from '../constants/monument';
-import * as uuid from 'uuid/v4';
 
 export interface Picture {
-  id: string;
-  /* author: string;
-  created_at: number;
-  flickr_id: string;
-  license_id: string; */
-  // monument_id: string;
-  // updated_at: number;
   type: string;
   url: string;
 }
@@ -20,52 +12,39 @@ export interface Geometry {
   coordinates: [number, number];
 }
 
+export interface Link {
+  id: string;
+  title: string;
+}
+
 export interface Properties {
   Info: string;
   Loc: string;
   Ref: string;
-  VidLink: string;
-  VidUrl: string;
   still: string;
+  Media: Picture[];
+  Links: Link[];
 }
 
 export interface Monument {
+  id: string;
   type: string;
   geometry: Geometry;
   properties: Properties;
+  icon: string;
+  layerId: string;
+}
+
+export interface Layer {
   id: string;
-  category: string,
-  pictures: Picture[]
-  /* id_number: number;
-  category: 'Cultural' | 'Natural' | 'Mixed';
-  created_at: string;
-  updated_at: string;
-  criteria_txt: string;
-  danger: string | null;
-  date_inscribed: string;
-  extension: number;
-  historical_description: string | null;
-  http_url: string;
-  image_url: string;
-  iso_code: string;
-  justification: string | null;
-  latitude: number;
-  longitude: number;
-  latlng: number[];
-  location: string;
-  states: string;
-  long_description: string;
-  short_description: string;
-  region: string;
-  revision: number;
-  secondary_dates: string;
-  site: string;
-  transboundary: number;
-  unique_number: number; */
+  title: string;
+  icon: string;
+  features: Monument[];
+  active: boolean;
 }
 
 export interface MonumentDict {
-  [id: string]: Monument;
+    [id: string]: Monument;
 }
 
 export interface RThunkAction extends Action {
@@ -75,29 +54,19 @@ export interface RThunkAction extends Action {
 
 export interface State {
   monuments: MonumentDict;
+  layers: Layer[];
   routing: RouterState;
 }
 
 const monuments = (state: MonumentDict = {}, { type, payload, id }: RThunkAction) => {
   switch (type) {
-    case SET_MONUMENTS: return {
-      ...payload.data
+    case SET_MONUMENTS: 
+    return {
+      ...payload.features
       .map((monument: Monument) => ({
         ...monument,
-        category: 'Natural',
-        pictures: [
-          {
-            id: uuid(),
-            type: 'image',
-            url: monument.properties.still
-          },
-          {
-            id: uuid(),
-            type: 'video',
-            url: monument.properties.VidUrl            
-          }
-        ],
-        latlng: monument.geometry.coordinates
+        icon: payload.icon,
+        layerId: payload.id
       }))
       .reduce((acc: MonumentDict, next: Monument) => {
         if (acc[next.id]) {
@@ -120,9 +89,30 @@ const monuments = (state: MonumentDict = {}, { type, payload, id }: RThunkAction
   }
 };
 
+const layers = (state: Layer[] = [], {type, payload}: RThunkAction) => {
+  switch (type) {
+    case 'ADD_LAYER':
+      return [...state, payload];
+
+    case 'TOGGLE_LAYER':
+      return state.map(layer => {
+        let newLayer = {...layer};
+
+        if(layer.id === payload.id){
+          newLayer.active = !layer.active;          
+        }        
+        
+        return newLayer;
+      })
+    default:
+      return state;
+  }
+}
+
 const reducers = combineReducers<State>({
   routing,
-  monuments
+  monuments,
+  layers
 }) as any;
 
 export default reducers;

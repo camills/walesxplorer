@@ -1,12 +1,12 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
 import { browserHistory } from 'react-router';
+import { Link } from "react-router";
 import { Monument, State as StateRoot } from '../reducers/index';
 import { StyleSheet, css } from 'aphrodite/no-important';
 import Slider from './slider';
 import { colors } from '../style';
 import Back from '../icons/back';
-import Fullscreen from './fullscreen';
 const placeholder = require('../placeholder.png'); // tslint:disable-line
 
 export interface Props {
@@ -18,6 +18,7 @@ interface State {
 }
 
 export interface RouteProps {
+  layerId: string;
   id: string;
 }
 
@@ -75,6 +76,14 @@ const styles = StyleSheet.create({
   },
   back: {
     marginRight: 4
+  },
+  links: {
+    marginTop: 10
+  },
+  link: {
+    margin: '10px 0',     
+    textDecoration: 'underline',
+    color: 'inherit'
   }
 });
 
@@ -88,33 +97,17 @@ class SidepanDetail extends React.Component<Props, State> {
     browserHistory.push('/');
   }
 
-  private onFullScreen = () => {
-    this.setState({
-      isFullscreen: true
-    });
-  }
-
-  private onDismissFullscreen = () => {
-    this.setState({
-      isFullscreen: false
-    });
-  }
-
   public render() {
     const { monument } = this.props;
-    const { isFullscreen } = this.state;
-
+  
     if (!monument) {
       return null;
     }
 
-    const hasPictures = monument.pictures && monument.pictures.length > 0;
+    const hasPictures = monument.properties.Media && monument.properties.Media.length > 0;
 
     return (
-      <div className={css(styles.container)}>
-        {
-          isFullscreen && <Fullscreen pictures={monument.pictures} onDismissFullscreen={this.onDismissFullscreen}/>
-        }
+      <div className={css(styles.container)}>        
         <div className={css(styles.footer)}>
           <div className={css(styles.allSites)} onClick={this.onGoBack}>
             <Back className={css(styles.back)}/>
@@ -123,7 +116,7 @@ class SidepanDetail extends React.Component<Props, State> {
         <div>
           {
             hasPictures ?
-              <Slider pictures={monument.pictures} onFullScreen={this.onFullScreen}/> :
+              <Slider pictures={monument.properties.Media} /* onFullScreen={this.onFullScreen} *//> :
               <img src={`/${placeholder}`}/>
           }
         </div>
@@ -131,6 +124,21 @@ class SidepanDetail extends React.Component<Props, State> {
           <h1 className={css(styles.title)}>{monument.properties.Loc}</h1>          
           <div className={css(styles.description)}>
             { monument.properties.Info }
+          </div>
+          <div className={css(styles.links)}>
+            {
+              this.props.monument.properties.Links && 
+              this.props.monument.properties.Links.length > 0 && 
+              this.props.monument.properties.Links.map((link) => {
+                return (
+                  <Link
+                    className={css(styles.link)}
+                    key={link.id} 
+                    to={`/detail/${this.props.monument.layerId}/${link.id}`}
+                  >{link.title}</Link>
+                );
+              })
+            }
           </div>
         </div>
       </div>
