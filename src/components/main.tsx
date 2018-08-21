@@ -1,4 +1,5 @@
 import * as React from 'react';
+import * as async from 'async';
 import { MapEvent } from 'react-mapbox-gl/lib/map-events';
 import { throttle } from 'lodash';
 import { connect } from 'react-redux';
@@ -10,7 +11,6 @@ import { browserHistory, RouteComponentProps } from 'react-router';
 import { Props as SidepanListProps } from './sidepanList';
 import { RouteProps } from './sidepanDetail';
 import SidepanContainer from './sidepanContainer';
-import { fetchMonument } from '../actions/monument';
 import LayerList from './layerList';
 import {toggleLayer} from '../actions/layers';
 
@@ -18,7 +18,6 @@ interface Props {
   getMonuments: () => any;
   monuments: MonumentDict;
   layers: Layer[];
-  fetchMonument: (layerId: string, id: string) => any;
   toggleLayer: (layerId: any) => any;
 }
 
@@ -37,8 +36,22 @@ const styles = StyleSheet.create({
   }
 });
 
-const defaultZoom: [number] = [6];
-const defaultCenter = [-0.2416815, 51.5285582];
+const defaultZoom: [number] = [7];
+const defaultCenter = [-3.243395493992125, 52.449215775360784];
+const markers = [
+  {
+    url: "/markers/places.png",
+    id: "places-icon"
+  },
+  {
+    url: "/markers/hotels.png",
+    id: "hotels-icon"
+  },
+  {
+    url: "/markers/tours.png",
+    id: "tours-icon"
+  }
+]
 
 class Main extends React.Component<Props & RouteComponentProps<RouteProps, void>, StateComp> {
   public state = {
@@ -51,17 +64,15 @@ class Main extends React.Component<Props & RouteComponentProps<RouteProps, void>
   };
 
   public componentWillMount() {
-    const { location, fetchMonument, params } = this.props;
+    const { location, params } = this.props;
     this.props.getMonuments().then(() => {
 
       if (location.pathname.includes('detail')) {
-        fetchMonument(params.layerId, params.id).then(() => {
           this.setState({
             center: this.props.monuments[params.id].geometry.coordinates as [number, number],
             zoom: [11],
             hoveredItem: params.id
           });
-        });
       }
   
       browserHistory.listen((ev) => {
@@ -70,23 +81,41 @@ class Main extends React.Component<Props & RouteComponentProps<RouteProps, void>
             zoom: defaultZoom,
             hoveredItem: ''
           });
-        } else if (ev.pathname.includes('detail')) {
+        }
+        //on every route change which contains `detail` keyword
+        else if (ev.pathname.includes('detail')) {          
           const parts = ev.pathname.trim().split('/');
-          const id = parts[3];
-          const selectedMonument = this.props.monuments[id];        
+          const id = parts[3];          
           this.setState({
-            center: selectedMonument.geometry.coordinates,
-            zoom: [11]
+            center: this.props.monuments[id].geometry.coordinates as [number, number],
+            zoom: [11],
+            hoveredItem: id
           });       
         }
       });      
     });    
-  } 
+  }
 
-  private mapInit: MapEvent = (map: any) => {
-    const bounds = map.getBounds();
-    const boundsArr = [bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()];    
-    this.setMonumentsAndBounds(boundsArr);
+  private loadMarkers: any = (map: any, cb: Function) => {
+    async.each(markers, (m: any, next: Function) => {
+      map.loadImage(m.url, (err: any, img: any) => {
+          if(err) return next(err);
+          map.addImage(m.id, img);
+          next();
+        }
+      );         
+    }, (err: Error) => {
+      cb(err);
+    })
+  };
+
+  private mapInit: MapEvent = (map: any) => {   
+    this.loadMarkers(map, (err: Error) => {
+      if(err) throw err;
+      const bounds = map.getBounds();
+      const boundsArr = [bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()];    
+      this.setMonumentsAndBounds(boundsArr);
+    });     
   };
 
   private setMonumentsAndBounds = (bounds: number[]) => {
@@ -128,18 +157,9 @@ class Main extends React.Component<Props & RouteComponentProps<RouteProps, void>
   }
 
   private onMonumentClick = (layerId: string, k: string) => {
-    const selectedMonument = this.props.monuments[k];
-
-    this.setState({
-      center: selectedMonument.geometry.coordinates,
-      zoom: [11]
-    });
-
-    this.props.fetchMonument(layerId, k);
-
     setTimeout(() => {
       browserHistory.replace(`/detail/${layerId}/${k}`);
-    }, 500);
+    }, 100);
   };
 
   handleLayerClick = (layerId: string) => {
@@ -174,7 +194,7 @@ class Main extends React.Component<Props & RouteComponentProps<RouteProps, void>
           BoundsChanged={this.BoundsChanged}
           mapInit={this.mapInit}
           onMonumentClick={this.onMonumentClick}
-          layers={this.props.layers}
+          layers={this.props.layers}          
         />
       </div>
     );
@@ -186,6 +206,5 @@ export default connect((state: State) => ({
   layers: state.layers,  
 }), dispatch => ({
   getMonuments: () => dispatch(getMonuments()),
-  fetchMonument: (layerId: string, id: string) => dispatch(fetchMonument(layerId, id)),
   toggleLayer: (layerId: string) => dispatch(toggleLayer(layerId)),
 }))(Main);
